@@ -1,15 +1,187 @@
 # ad-domaincontrollers-runtime.yaml
 # Runtime thresholds consumed by Mondoo MQL checks via cnspec props.
 # Security team owns these values. Platform team owns the MQL checks.
+#
+# Change a value here → every scan picks it up next run, no MQL edits needed.
+# Organised by the same 18 categories as the MQL policy.
 
 ad-domaincontrollers:
-  # TODO: Add threshold categories and values
-  # Example:
-  #   tls:
-  #     min_cert_remaining_days: 30
-  #     min_tls_version: "1.2"
-  #   authentication:
-  #     block_default_password: true
-  #     require_sso: true
-  general:
-    placeholder: true
+
+  # ── 1. LDAP ──────────────────────────────────────────────
+  ldap:
+    require_server_signing: 2             # 0=none, 1=negotiate, 2=require
+    require_channel_binding: 2            # 0=never, 1=when-supported, 2=always
+    ldaps_port: 636
+    min_cert_remaining_days: 30
+    require_client_signing: 2             # 0=none, 1=negotiate, 2=require
+
+  # ── 2. KERBEROS ──────────────────────────────────────────
+  kerberos:
+    max_krbtgt_password_age_days: 180
+    block_des_encryption: true
+    block_rc4_encryption: true
+    require_aes128: true
+    require_aes256: true
+    block_unconstrained_delegation: true
+    block_preauth_not_required: true
+    block_protocol_transition_delegation: true
+
+  # ── 3. NTLM ─────────────────────────────────────────────
+  ntlm:
+    lm_compatibility_level: 5             # 5 = NTLMv2 only, refuse LM & NTLM
+    require_no_lm_hash: true
+    audit_incoming_traffic: 2             # 2 = enable all
+    min_outgoing_traffic_restrict: 1      # 1 = audit, 2 = deny
+    min_lm_compat_block_ntlmv1: 3
+    ntlm_min_client_sec: 537395200        # NTLMv2 + 128-bit
+
+  # ── 4. PASSWORD POLICY ───────────────────────────────────
+  password:
+    min_length: 14
+    require_complexity: true
+    min_history_count: 24
+    max_age_days: 90
+    min_age_days: 1
+    block_reversible_encryption: true
+    block_passwd_not_required: true
+    block_password_never_expires: true
+
+  # ── 5. ACCOUNT LOCKOUT ──────────────────────────────────
+  lockout:
+    max_threshold: 5
+    min_threshold: 1
+    min_duration_minutes: 30
+    min_observation_window_minutes: 30
+
+  # ── 6. PRIVILEGED ACCESS ────────────────────────────────
+  privileged_access:
+    max_domain_admins: 5
+    max_enterprise_admins: 2
+    max_schema_admins: 0
+    require_builtin_admin_disabled: true
+    require_guest_disabled: true
+    require_admin_not_delegated: true
+    require_admin_protected_users: true
+    max_machine_account_quota: 0
+
+  # ── 7. GPO / SYSVOL ─────────────────────────────────────
+  gpo:
+    require_dfsr: true
+    block_sysvol_authenticated_write: true
+    max_unlinked_gpos: 5
+
+  # ── 8. DNS ───────────────────────────────────────────────
+  dns:
+    require_secure_dynamic_updates: true
+    block_zone_transfer_any: true
+    require_scavenging: true
+    block_recursion: true
+    min_socket_pool_size: 2500
+    require_debug_logging: true
+    min_cache_locking_percent: 100
+
+  # ── 9. REPLICATION ──────────────────────────────────────
+  replication:
+    max_replication_failures: 0
+    max_hours_since_last_replication: 1.0
+    block_lingering_objects: true
+    require_sysvol_normal: true
+
+  # ── 10. ADCS ─────────────────────────────────────────────
+  adcs:
+    block_esc1_templates: true
+    block_esc2_templates: true
+    block_esc3_templates: true
+    block_esc6_san_flag: true
+    block_esc8_http_enrollment: true
+    ca_audit_filter: 127
+    block_ntlm_web_enrollment: true
+
+  # ── 11. SMB ──────────────────────────────────────────────
+  smb:
+    block_smbv1_server: true
+    block_smbv1_client_driver: true
+    require_server_signing: true
+    require_client_signing: true
+    require_encryption: true
+    block_null_session_shares: true
+    require_null_session_restricted: true
+
+  # ── 12. SERVICES ─────────────────────────────────────────
+  services:
+    required_running:
+      - "NTDS"
+      - "DNS"
+      - "Kdc"
+      - "Netlogon"
+      - "DFSR"
+      - "W32Time"
+    required_disabled:
+      - "Spooler"
+      - "RemoteRegistry"
+    allow_iis_only_with_adcs: true
+
+  # ── 13. NTDS / BACKUP ───────────────────────────────────
+  ntds:
+    block_world_readable_dit: true
+    max_backup_age_days: 7
+    require_recycle_bin: true
+    min_tombstone_lifetime_days: 180
+
+  # ── 14. AUDIT POLICY ────────────────────────────────────
+  audit:
+    require_advanced_override_legacy: true
+    min_security_log_size_mb: 4096
+    require_event_forwarding: true
+    required_success_and_failure:
+      - "Credential Validation"
+      - "Kerberos Authentication Service"
+      - "Kerberos Service Ticket Operations"
+      - "Directory Service Access"
+      - "Logon"
+      - "User Account Management"
+      - "Audit Policy Change"
+      - "Sensitive Privilege Use"
+    required_success:
+      - "Directory Service Changes"
+      - "Security Group Management"
+    required_failure:
+      - "Account Lockout"
+
+  # ── 15. CREDENTIAL PROTECTION ───────────────────────────
+  credentials:
+    require_credential_guard: true
+    block_wdigest_plaintext: true
+    require_lsa_ppl: true
+    max_cached_logons: 0
+    require_laps: true
+    require_secure_boot: true
+
+  # ── 16. NETWORK ──────────────────────────────────────────
+  network:
+    require_firewall_domain: true
+    require_firewall_private: true
+    require_firewall_public: true
+    block_rdp: true
+    block_llmnr: true
+    block_netbios: true
+    block_wpad: true
+    require_winrm_https: true
+
+  # ── 17. HYGIENE ──────────────────────────────────────────
+  hygiene:
+    max_inactive_computer_days: 90
+    max_inactive_computers_allowed: 10
+    max_inactive_user_days: 90
+    max_inactive_users_allowed: 10
+    min_domain_functional_level: "2016"
+    min_forest_functional_level: "2016"
+    block_kerberoastable_non_expiring: true
+    block_asrep_roastable: true
+
+  # ── 18. PATCHING ─────────────────────────────────────────
+  patching:
+    max_patch_age_days: 60
+    min_os_build: 17763                   # Windows Server 2019+
+    require_auto_update: true
+    require_ps_script_block_logging: true
