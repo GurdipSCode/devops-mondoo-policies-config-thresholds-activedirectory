@@ -1,0 +1,15 @@
+# ad-domaincontrollers-runtime.yaml
+# Runtime thresholds consumed by Mondoo MQL checks via cnspec props.
+# Security team owns these values. Platform team owns the MQL checks.
+
+ad-domaincontrollers:
+  # TODO: Add threshold categories and values
+  # Example:
+  #   tls:
+  #     min_cert_remaining_days: 30
+  #     min_tls_version: "1.2"
+  #   authentication:
+  #     block_default_password: true
+  #     require_sso: true
+  general:
+    placeholder: true
